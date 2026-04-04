@@ -92,8 +92,6 @@ export function AdminDashboardPage() {
 
   const loading =
     productsQuery.isLoading || categoriesQuery.isLoading || ordersQuery.isLoading;
-  const errored =
-    productsQuery.isError || categoriesQuery.isError || ordersQuery.isError;
   const products = Array.isArray(productsQuery.data) ? productsQuery.data : [];
   const categories = Array.isArray(categoriesQuery.data) ? categoriesQuery.data : [];
   const orders = Array.isArray(ordersQuery.data) ? ordersQuery.data : [];
@@ -108,8 +106,10 @@ export function AdminDashboardPage() {
     return <LoadingState title="Loading admin dashboard" />;
   }
 
-  if (errored) {
-    return <ErrorState message="One or more admin data sources could not be loaded." />;
+  if (productsQuery.isError && categoriesQuery.isError && ordersQuery.isError) {
+    return (
+      <ErrorState message="We could not load the admin dashboard. Check your API connection and admin authorization, then try again." />
+    );
   }
 
   return (
@@ -141,7 +141,9 @@ export function AdminDashboardPage() {
           </Link>
         </div>
 
-        {sortedProducts.length === 0 ? (
+        {productsQuery.isError ? (
+          <ErrorState message="Product inventory could not be loaded." />
+        ) : sortedProducts.length === 0 ? (
           <EmptyState
             title="No products available"
             message="Add the first product to start managing inventory."
@@ -243,7 +245,12 @@ export function AdminDashboardPage() {
           </form>
 
           <div className="stack-list">
-            {categories.map((category) => (
+            {categoriesQuery.isError ? (
+              <ErrorState message="Categories could not be loaded or updated right now." />
+            ) : null}
+
+            {!categoriesQuery.isError &&
+              categories.map((category) => (
               <article key={category.id} className="list-card">
                 <div>
                   <strong>{category.name}</strong>
@@ -282,34 +289,43 @@ export function AdminDashboardPage() {
           </div>
 
           <div className="stack-list">
-            {sortedOrders.map((order) => (
-              <article key={order._id || order.id} className="list-card">
-                <div>
-                  <div className="button-row">
-                    <strong>{order._id || order.id}</strong>
-                    <StatusBadge status={order.status || "PENDING"} />
+            {ordersQuery.isError ? (
+              <ErrorState message="Orders could not be loaded. This usually means the current login is not a real backend admin token." />
+            ) : sortedOrders.length === 0 ? (
+              <EmptyState
+                title="No orders found"
+                message="When orders are available, you will manage their statuses here."
+              />
+            ) : (
+              sortedOrders.map((order) => (
+                <article key={order._id || order.id} className="list-card">
+                  <div>
+                    <div className="button-row">
+                      <strong>{order._id || order.id}</strong>
+                      <StatusBadge status={order.status || "PENDING"} />
+                    </div>
+                    <p>{order.user?.email || order.shippingAddress?.email || "Customer order"}</p>
+                    <p>{formatCurrency(order.totalPrice || order.total || 0)}</p>
                   </div>
-                  <p>{order.user?.email || order.shippingAddress?.email || "Customer order"}</p>
-                  <p>{formatCurrency(order.totalPrice || order.total || 0)}</p>
-                </div>
-                <select
-                  className="status-select"
-                  defaultValue={order.status || "PENDING"}
-                  onChange={(event) =>
-                    orderStatusMutation.mutate({
-                      orderId: order._id || order.id,
-                      status: event.target.value,
-                    })
-                  }
-                >
-                  {ORDER_STATUSES.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
-              </article>
-            ))}
+                  <select
+                    className="status-select"
+                    defaultValue={order.status || "PENDING"}
+                    onChange={(event) =>
+                      orderStatusMutation.mutate({
+                        orderId: order._id || order.id,
+                        status: event.target.value,
+                      })
+                    }
+                  >
+                    {ORDER_STATUSES.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </select>
+                </article>
+              ))
+            )}
           </div>
         </section>
       </section>
