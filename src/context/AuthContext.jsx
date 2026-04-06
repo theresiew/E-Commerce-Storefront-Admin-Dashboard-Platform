@@ -15,6 +15,7 @@ const AuthContext = createContext(null);
 function createAdminSession() {
   return {
     token: "admin-session",
+    isMockAdmin: true,
     user: {
       id: "admin-static-user",
       fullName: "Platform Administrator",
@@ -94,6 +95,7 @@ export function AuthProvider({ children }) {
       session,
       user: session?.user || null,
       token: session?.token || "",
+      isMockAdmin: Boolean(session?.isMockAdmin),
       authLoading,
       isAuthenticated: Boolean(session?.user),
       userRole: session?.user?.role || "GUEST",

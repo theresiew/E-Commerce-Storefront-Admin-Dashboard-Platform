@@ -21,11 +21,19 @@ import { StatusBadge } from "../components/StatusBadge";
 import { ORDER_STATUSES } from "../utils/constants";
 import { useCategories, useProducts } from "../hooks/useCatalog";
 import { useAllOrders } from "../hooks/useOrders";
+import { useAuth } from "../context/AuthContext";
+import {
+  removeDemoCategory,
+  removeDemoProduct,
+  updateDemoOrderStatus,
+  upsertDemoCategory,
+} from "../lib/demoAdmin";
 import { formatCurrency, getErrorMessage } from "../utils/formatters";
 import { categorySchema } from "../validation/schemas";
 
 export function AdminDashboardPage() {
   const queryClient = useQueryClient();
+  const { isMockAdmin } = useAuth();
   const [categoryBeingEdited, setCategoryBeingEdited] = useState(null);
   const [productPendingDelete, setProductPendingDelete] = useState(null);
 
@@ -43,6 +51,10 @@ export function AdminDashboardPage() {
 
   const categoryMutation = useMutation({
     mutationFn: async (payload) => {
+      if (isMockAdmin) {
+        return upsertDemoCategory(payload, categoryBeingEdited);
+      }
+
       if (categoryBeingEdited) {
         return updateCategory(categoryBeingEdited.id, payload);
       }
@@ -59,7 +71,14 @@ export function AdminDashboardPage() {
   });
 
   const productDeleteMutation = useMutation({
-    mutationFn: (productId) => deleteProduct(productId),
+    mutationFn: (productId) => {
+      if (isMockAdmin) {
+        removeDemoProduct(productId);
+        return Promise.resolve({ success: true });
+      }
+
+      return deleteProduct(productId);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       setProductPendingDelete(null);
@@ -69,7 +88,14 @@ export function AdminDashboardPage() {
   });
 
   const orderStatusMutation = useMutation({
-    mutationFn: ({ orderId, status }) => updateOrderStatus(orderId, status),
+    mutationFn: ({ orderId, status }) => {
+      if (isMockAdmin) {
+        updateDemoOrderStatus(orderId, status);
+        return Promise.resolve({ success: true });
+      }
+
+      return updateOrderStatus(orderId, status);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders", "all"] });
       toast.success("Order status updated.");
@@ -78,9 +104,17 @@ export function AdminDashboardPage() {
   });
 
   const categoryDeleteMutation = useMutation({
-    mutationFn: (categoryId) => deleteCategory(categoryId),
+    mutationFn: (categoryId) => {
+      if (isMockAdmin) {
+        removeDemoCategory(categoryId);
+        return Promise.resolve({ success: true });
+      }
+
+      return deleteCategory(categoryId);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("Category deleted.");
     },
     onError: (error) => toast.error(getErrorMessage(error, "Unable to delete category.")),

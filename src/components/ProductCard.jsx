@@ -1,21 +1,27 @@
 import { Eye, ShoppingCart } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { formatCurrency } from "../utils/formatters";
+import { getProductImageUrl, getProductPlaceholder } from "../utils/images";
 
 export function ProductCard({ product }) {
   const { addItem } = useCart();
-  const image =
-    product.images?.[0]?.url ||
-    product.images?.[0] ||
-    product.image ||
-    "https://placehold.co/600x400";
+  const [image, setImage] = useState(() => getProductImageUrl(product));
   const stock = Number(product.stockQuantity ?? product.countInStock ?? 0);
+
+  useEffect(() => {
+    setImage(getProductImageUrl(product));
+  }, [product]);
 
   return (
     <article className="product-card">
       <div className="product-media">
-        <img src={image} alt={product.title} />
+        <img
+          src={image || getProductPlaceholder(product.title)}
+          alt={product.title}
+          onError={() => setImage(getProductPlaceholder(product.title))}
+        />
         <span className={`stock-badge ${stock > 0 ? "success-badge" : "danger-badge"}`}>
           {stock > 0 ? `${stock} in stock` : "Out of stock"}
         </span>

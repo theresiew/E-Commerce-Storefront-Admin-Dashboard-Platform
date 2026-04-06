@@ -1,11 +1,12 @@
 import { Minus, Plus, ShoppingCart } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import { useCart } from "../context/CartContext";
 import { useProduct } from "../hooks/useCatalog";
 import { formatCurrency } from "../utils/formatters";
+import { getProductImageUrl, getProductPlaceholder } from "../utils/images";
 
 export function ProductDetailsPage() {
   const { productId } = useParams();
@@ -24,16 +25,20 @@ export function ProductDetailsPage() {
 
   const product = productQuery.data;
   const stock = Number(product.stockQuantity ?? product.countInStock ?? 0);
-  const image =
-    product.images?.[0]?.url ||
-    product.images?.[0] ||
-    product.image ||
-    "https://placehold.co/900x700";
+  const [image, setImage] = useState(() => getProductImageUrl(product));
+
+  useEffect(() => {
+    setImage(getProductImageUrl(product));
+  }, [product]);
 
   return (
     <div className="details-grid">
       <div className="details-image panel">
-        <img src={image} alt={product.title} />
+        <img
+          src={image || getProductPlaceholder(product.title)}
+          alt={product.title}
+          onError={() => setImage(getProductPlaceholder(product.title))}
+        />
       </div>
 
       <section className="panel details-copy">

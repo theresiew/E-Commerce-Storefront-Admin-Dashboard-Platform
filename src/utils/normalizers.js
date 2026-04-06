@@ -3,6 +3,29 @@ export function normalizeProduct(product) {
     return product;
   }
 
+  const normalizedImages =
+    product.images && product.images.length > 0
+      ? product.images
+          .map((image) => {
+            if (typeof image === "string") {
+              return { url: image };
+            }
+
+            if (typeof image?.url === "string") {
+              return { ...image, url: image.url };
+            }
+
+            if (typeof image?.url?.url === "string") {
+              return { ...image, url: image.url.url };
+            }
+
+            return null;
+          })
+          .filter(Boolean)
+      : product.image
+        ? [{ url: product.image }]
+        : [];
+
   return {
     ...product,
     id: product.id || product._id,
@@ -16,12 +39,7 @@ export function normalizeProduct(product) {
       product.stockQuantity ?? product.countInStock ?? product.stock ?? 0
     ),
     variantId: product.variantId || product.variants?.[0]?.id || null,
-    images:
-      product.images && product.images.length > 0
-        ? product.images.map((image) => (typeof image === "string" ? { url: image } : image))
-        : product.image
-          ? [{ url: product.image }]
-          : [],
+    images: normalizedImages,
   };
 }
 

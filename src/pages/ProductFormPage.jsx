@@ -11,13 +11,16 @@ import {
 import { ErrorState } from "../components/ErrorState";
 import { FormField } from "../components/FormField";
 import { LoadingState } from "../components/LoadingState";
+import { useAuth } from "../context/AuthContext";
 import { useCategories, useProduct } from "../hooks/useCatalog";
+import { upsertDemoProduct } from "../lib/demoAdmin";
 import { getErrorMessage } from "../utils/formatters";
 import { productSchema } from "../validation/schemas";
 
 export function ProductFormPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { isMockAdmin } = useAuth();
   const { productId } = useParams();
   const isEditing = Boolean(productId);
 
@@ -65,17 +68,17 @@ export function ProductFormPage() {
       stockQuantity: Number(product.stockQuantity ?? product.countInStock ?? 0),
       images:
         product.images && product.images.length > 0
-          ? product.images
+          ? product.images.map((image) =>
+              typeof image === "string"
+                ? image
+                : image?.url?.url || image?.url || ""
+            )
           : [product.image || ""],
     });
   }, [form, productQuery.data]);
 
   const productMutation = useMutation({
     mutationFn: async (values) => {
-      const category = categoriesQuery.data.find(
-        (item) => item.id === values.categoryId || item.name === values.categoryId
-      );
-
       const payload = {
         name: values.title,
         description: values.description,
@@ -85,6 +88,10 @@ export function ProductFormPage() {
         stock: values.stockQuantity,
         images: values.images.map((url) => ({ url })),
       };
+
+      if (isMockAdmin) {
+        return upsertDemoProduct(payload, isEditing ? productId : null);
+      }
 
       if (isEditing) {
         return updateProduct(productId, payload);
