@@ -26,7 +26,7 @@ export function HomePage() {
     (category: any) => category.name === activeCategory,
   );
   const allProductsQuery = useProducts();
-  const categoryProductsQuery = useProductsByCategory(selectedCategory?.id);
+  const categoryProductsQuery = useProductsByCategory(selectedCategory);
   const productsQuery = activeCategory === "ALL" ? allProductsQuery : categoryProductsQuery;
 
   useEffect(() => {

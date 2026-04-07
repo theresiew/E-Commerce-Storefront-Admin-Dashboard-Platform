@@ -33,6 +33,23 @@ import { ORDER_STATUSES } from "../utils/constants";
 import { formatCurrency, getErrorMessage } from "../utils/formatters";
 import { categorySchema } from "../validation/schemas";
 
+function getProductCategoryMeta(product: any, categories: any[]) {
+  const categoryName = product.category?.name || product.category || "General";
+  const categoryId =
+    product.categoryId || product.category?._id || product.category?.id || "";
+  const matchedCategory = categories.find(
+    (category) =>
+      String(category.id) === String(categoryId) ||
+      String(category.name).toLowerCase() === String(categoryName).toLowerCase(),
+  );
+
+  return {
+    categoryName,
+    categoryId,
+    matchedCategory,
+  };
+}
+
 export function AdminDashboardPage() {
   const queryClient = useQueryClient();
   const { isMockAdmin } = useAuth();
@@ -203,7 +220,23 @@ export function AdminDashboardPage() {
                       {product.title}
                     </td>
                     <td className="px-4 py-4 text-sm text-ink-500">
-                      {product.category?.name || product.category || "General"}
+                      {(() => {
+                        const meta = getProductCategoryMeta(product, categories);
+
+                        return (
+                          <div className="grid gap-1">
+                            <span className="font-semibold text-ink-900">{meta.categoryName}</span>
+                            <span className="text-xs uppercase tracking-[0.14em] text-ink-500">
+                              ID: {meta.categoryId || "missing"}
+                            </span>
+                            {!meta.matchedCategory ? (
+                              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-rose-600">
+                                Not matched to fetched categories
+                              </span>
+                            ) : null}
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="px-4 py-4 text-sm font-semibold text-ink-900">
                       {formatCurrency(product.price)}

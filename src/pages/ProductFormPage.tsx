@@ -48,6 +48,10 @@ export function ProductFormPage() {
 
   const categoriesQuery = useCategories();
   const productQuery = useProduct(productId);
+  const watchedCategoryId = form.watch("categoryId");
+  const selectedCategory = categoriesQuery.data?.find(
+    (category: any) => String(category.id) === String(watchedCategoryId),
+  );
 
   useEffect(() => {
     if (!productQuery.data) {
@@ -164,6 +168,18 @@ export function ProductFormPage() {
           >
             <input id="product-stock" type="number" step="1" {...form.register("stockQuantity")} />
           </FormField>
+        </div>
+
+        <div className="rounded-[24px] border border-white/70 bg-white/70 p-4 text-sm text-ink-500">
+          <p className="font-semibold text-ink-900">Current category link</p>
+          <p className="mt-2">Selected name: {selectedCategory?.name || "None selected"}</p>
+          <p className="mt-1">Selected ID: {watchedCategoryId || "None selected"}</p>
+          {isEditing && productQuery.data ? (
+            <p className="mt-1">
+              Existing product category:{" "}
+              {productQuery.data.category?.name || productQuery.data.category || "Unknown"}
+            </p>
+          ) : null}
         </div>
 
         <FormField

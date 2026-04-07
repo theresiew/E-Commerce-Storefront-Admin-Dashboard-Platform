@@ -34,6 +34,11 @@ export function normalizeProduct(product) {
     description: product.description || product.details || "",
     brand: product.brand || product.manufacturer || "NovaCart",
     category: product.category || product.categoryName || "General",
+    categoryId:
+      product.categoryId ||
+      product.category?._id ||
+      product.category?.id ||
+      "",
     price: Number(product.price || 0),
     stockQuantity: Number(
       product.stockQuantity ?? product.countInStock ?? product.stock ?? 0

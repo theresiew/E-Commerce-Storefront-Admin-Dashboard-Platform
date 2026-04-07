@@ -20,11 +20,11 @@ export function useProducts() {
   };
 }
 
-export function useProductsByCategory(categoryId) {
+export function useProductsByCategory(category) {
   const query = useQuery({
-    queryKey: ["products", "category", categoryId],
-    queryFn: () => fetchProductsByCategory(categoryId),
-    enabled: Boolean(categoryId),
+    queryKey: ["products", "category", category?.id || category?.name],
+    queryFn: () => fetchProductsByCategory(category),
+    enabled: Boolean(category?.id || category?.name),
   });
 
   return {
