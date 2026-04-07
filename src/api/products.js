@@ -30,6 +30,14 @@ export async function fetchProducts() {
   return extractProducts(data).map(normalizeProduct);
 }
 
+export async function fetchProductsByCategory(categoryId) {
+  const data = await requestWithFallback("get", [
+    `/public/products/category/${categoryId}?limit=100`,
+    `/public/products/category/${categoryId}`,
+  ]);
+  return extractProducts(data).map(normalizeProduct);
+}
+
 export async function fetchProductById(productId) {
   const response = await requestWithFallback("get", [
     `/public/products/${productId}`,
@@ -45,7 +53,7 @@ export async function createProduct(payload) {
 
 export async function updateProduct(productId, payload) {
   return requestWithFallback(
-    "patch",
+    "put",
     [`/admin/products/${productId}`, `/products/${productId}`],
     payload
   );

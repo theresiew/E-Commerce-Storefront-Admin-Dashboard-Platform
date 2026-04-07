@@ -5,11 +5,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
-import {
-  createCategory,
-  deleteCategory,
-  updateCategory,
-} from "../api/categories";
+import { createCategory, deleteCategory, updateCategory } from "../api/categories";
 import { deleteProduct } from "../api/products";
 import { updateOrderStatus } from "../api/orders";
 import { ConfirmModal } from "../components/ConfirmModal";
@@ -18,24 +14,30 @@ import { ErrorState } from "../components/ErrorState";
 import { FormField } from "../components/FormField";
 import { LoadingState } from "../components/LoadingState";
 import { StatusBadge } from "../components/StatusBadge";
-import { ORDER_STATUSES } from "../utils/constants";
+import { useAuth } from "../context/AuthContext";
 import { useCategories, useProducts } from "../hooks/useCatalog";
 import { useAllOrders } from "../hooks/useOrders";
-import { useAuth } from "../context/AuthContext";
+import {
+  eyebrowClass,
+  primaryButtonClass,
+  secondaryButtonClass,
+  sectionClass,
+} from "../lib/ui";
 import {
   removeDemoCategory,
   removeDemoProduct,
   updateDemoOrderStatus,
   upsertDemoCategory,
 } from "../lib/demoAdmin";
+import { ORDER_STATUSES } from "../utils/constants";
 import { formatCurrency, getErrorMessage } from "../utils/formatters";
 import { categorySchema } from "../validation/schemas";
 
 export function AdminDashboardPage() {
   const queryClient = useQueryClient();
   const { isMockAdmin } = useAuth();
-  const [categoryBeingEdited, setCategoryBeingEdited] = useState(null);
-  const [productPendingDelete, setProductPendingDelete] = useState(null);
+  const [categoryBeingEdited, setCategoryBeingEdited] = useState<any>(null);
+  const [productPendingDelete, setProductPendingDelete] = useState<any>(null);
 
   const productsQuery = useProducts();
   const categoriesQuery = useCategories();
@@ -50,7 +52,7 @@ export function AdminDashboardPage() {
   });
 
   const categoryMutation = useMutation({
-    mutationFn: async (payload) => {
+    mutationFn: async (payload: any) => {
       if (isMockAdmin) {
         return upsertDemoCategory(payload, categoryBeingEdited);
       }
@@ -71,7 +73,7 @@ export function AdminDashboardPage() {
   });
 
   const productDeleteMutation = useMutation({
-    mutationFn: (productId) => {
+    mutationFn: (productId: string) => {
       if (isMockAdmin) {
         removeDemoProduct(productId);
         return Promise.resolve({ success: true });
@@ -88,7 +90,7 @@ export function AdminDashboardPage() {
   });
 
   const orderStatusMutation = useMutation({
-    mutationFn: ({ orderId, status }) => {
+    mutationFn: ({ orderId, status }: { orderId: string; status: string }) => {
       if (isMockAdmin) {
         updateDemoOrderStatus(orderId, status);
         return Promise.resolve({ success: true });
@@ -104,7 +106,7 @@ export function AdminDashboardPage() {
   });
 
   const categoryDeleteMutation = useMutation({
-    mutationFn: (categoryId) => {
+    mutationFn: (categoryId: string) => {
       if (isMockAdmin) {
         removeDemoCategory(categoryId);
         return Promise.resolve({ success: true });
@@ -130,10 +132,10 @@ export function AdminDashboardPage() {
   const categories = Array.isArray(categoriesQuery.data) ? categoriesQuery.data : [];
   const orders = Array.isArray(ordersQuery.data) ? ordersQuery.data : [];
   const sortedProducts = [...products].sort((left, right) =>
-    String(left.title).localeCompare(String(right.title))
+    String(left.title).localeCompare(String(right.title)),
   );
   const sortedOrders = [...orders].sort((left, right) =>
-    String(right._id || right.id).localeCompare(String(left._id || left.id))
+    String(right._id || right.id).localeCompare(String(left._id || left.id)),
   );
 
   if (loading) {
@@ -147,29 +149,29 @@ export function AdminDashboardPage() {
   }
 
   return (
-    <div className="page-stack">
-      <section className="admin-overview">
-        <article className="panel metric-card">
-          <span>Products</span>
-          <strong>{products.length}</strong>
-        </article>
-        <article className="panel metric-card">
-          <span>Categories</span>
-          <strong>{categories.length}</strong>
-        </article>
-        <article className="panel metric-card">
-          <span>Orders</span>
-          <strong>{orders.length}</strong>
-        </article>
+    <div className="grid gap-6">
+      <section className="grid gap-4 md:grid-cols-3">
+        {[
+          { label: "Products", value: products.length },
+          { label: "Categories", value: categories.length },
+          { label: "Orders", value: orders.length },
+        ].map((item) => (
+          <article key={item.label} className={`${sectionClass} grid gap-2`}>
+            <span className="text-sm font-medium text-ink-500">{item.label}</span>
+            <strong className="text-4xl font-semibold text-ink-900">{item.value}</strong>
+          </article>
+        ))}
       </section>
 
-      <section className="panel">
-        <div className="section-heading">
+      <section className={`${sectionClass} grid gap-5`}>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <span className="eyebrow">Inventory</span>
-            <h1>Manage live stock and product listings.</h1>
+            <span className={eyebrowClass}>Inventory</span>
+            <h1 className="mt-3 text-4xl font-semibold text-ink-900">
+              Manage live stock and product listings.
+            </h1>
           </div>
-          <Link to="/admin/product/new" className="primary-button icon-button">
+          <Link to="/admin/product/new" className={primaryButtonClass}>
             <Plus size={16} />
             Add Product
           </Link>
@@ -183,46 +185,52 @@ export function AdminDashboardPage() {
             message="Add the first product to start managing inventory."
           />
         ) : (
-          <div className="table-wrap">
-            <table className="data-table">
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-separate border-spacing-y-3">
               <thead>
-                <tr>
-                  <th>Title</th>
-                  <th>Category</th>
-                  <th>Price</th>
-                  <th>Stock</th>
-                  <th />
+                <tr className="text-left text-xs font-bold uppercase tracking-[0.18em] text-ink-500">
+                  <th className="px-4">Title</th>
+                  <th className="px-4">Category</th>
+                  <th className="px-4">Price</th>
+                  <th className="px-4">Stock</th>
+                  <th className="px-4" />
                 </tr>
               </thead>
               <tbody>
-                {sortedProducts.map((product) => (
-                  <tr key={product._id || product.id}>
-                    <td>{product.title}</td>
-                    <td>{product.category?.name || product.category || "General"}</td>
-                    <td>{formatCurrency(product.price)}</td>
-                    <td>
+                {sortedProducts.map((product: any) => (
+                  <tr key={product._id || product.id} className="bg-white/75 shadow-sm">
+                    <td className="rounded-l-[24px] px-4 py-4 text-sm font-semibold text-ink-900">
+                      {product.title}
+                    </td>
+                    <td className="px-4 py-4 text-sm text-ink-500">
+                      {product.category?.name || product.category || "General"}
+                    </td>
+                    <td className="px-4 py-4 text-sm font-semibold text-ink-900">
+                      {formatCurrency(product.price)}
+                    </td>
+                    <td className="px-4 py-4">
                       <span
-                        className={`status-badge ${
+                        className={`inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] ${
                           Number(product.stockQuantity ?? product.countInStock ?? 0) <= 5
-                            ? "status-cancelled"
-                            : "status-delivered"
+                            ? "bg-rose-100 text-rose-700"
+                            : "bg-emerald-100 text-emerald-700"
                         }`}
                       >
                         {product.stockQuantity ?? product.countInStock ?? 0}
                       </span>
                     </td>
-                    <td>
-                      <div className="button-row">
+                    <td className="rounded-r-[24px] px-4 py-4">
+                      <div className="flex flex-wrap gap-2">
                         <Link
                           to={`/admin/product/${product._id || product.id}/edit`}
-                          className="ghost-button icon-button"
+                          className={secondaryButtonClass}
                         >
                           <PencilLine size={16} />
                           Edit
                         </Link>
                         <button
                           type="button"
-                          className="ghost-button icon-button"
+                          className={secondaryButtonClass}
                           onClick={() => setProductPendingDelete(product)}
                         >
                           <Trash2 size={16} />
@@ -238,16 +246,16 @@ export function AdminDashboardPage() {
         )}
       </section>
 
-      <section className="dashboard-split">
-        <section className="panel">
-          <div className="section-heading">
-            <div>
-              <span className="eyebrow">Categories</span>
-              <h2>Add, edit, and remove product groups.</h2>
-            </div>
+      <section className="grid gap-6 xl:grid-cols-2">
+        <section className={`${sectionClass} grid gap-5`}>
+          <div>
+            <span className={eyebrowClass}>Categories</span>
+            <h2 className="mt-3 text-3xl font-semibold text-ink-900">
+              Add, edit, and remove product groups.
+            </h2>
           </div>
 
-          <form className="form-grid" onSubmit={submitCategory}>
+          <form className="grid gap-4" onSubmit={submitCategory}>
             <FormField
               label="Category Name"
               htmlFor="category-name"
@@ -255,8 +263,8 @@ export function AdminDashboardPage() {
             >
               <input id="category-name" type="text" {...categoryForm.register("name")} />
             </FormField>
-            <div className="button-row">
-              <button type="submit" className="primary-button" disabled={categoryMutation.isPending}>
+            <div className="flex flex-wrap gap-3">
+              <button type="submit" className={primaryButtonClass} disabled={categoryMutation.isPending}>
                 {categoryMutation.isPending
                   ? "Saving..."
                   : categoryBeingEdited
@@ -266,7 +274,7 @@ export function AdminDashboardPage() {
               {categoryBeingEdited ? (
                 <button
                   type="button"
-                  className="ghost-button"
+                  className={secondaryButtonClass}
                   onClick={() => {
                     categoryForm.reset({ name: "" });
                     setCategoryBeingEdited(null);
@@ -278,51 +286,54 @@ export function AdminDashboardPage() {
             </div>
           </form>
 
-          <div className="stack-list">
+          <div className="grid gap-3">
             {categoriesQuery.isError ? (
               <ErrorState message="Categories could not be loaded or updated right now." />
             ) : null}
 
             {!categoriesQuery.isError &&
-              categories.map((category) => (
-              <article key={category.id} className="list-card">
-                <div>
-                  <strong>{category.name}</strong>
-                  <p>{category.id}</p>
-                </div>
-                <div className="button-row">
-                  <button
-                    type="button"
-                    className="ghost-button"
-                    onClick={() => {
-                      setCategoryBeingEdited(category);
-                      categoryForm.reset({ name: category.name });
-                    }}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="ghost-button"
-                    onClick={() => categoryDeleteMutation.mutate(category.id)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </article>
-            ))}
+              categories.map((category: any) => (
+                <article
+                  key={category.id}
+                  className="flex flex-col gap-3 rounded-[26px] border border-white/70 bg-white/75 p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div>
+                    <strong className="text-lg font-semibold text-ink-900">{category.name}</strong>
+                    <p className="mt-1 text-sm text-ink-500">{category.id}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className={secondaryButtonClass}
+                      onClick={() => {
+                        setCategoryBeingEdited(category);
+                        categoryForm.reset({ name: category.name });
+                      }}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className={secondaryButtonClass}
+                      onClick={() => categoryDeleteMutation.mutate(category.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </article>
+              ))}
           </div>
         </section>
 
-        <section className="panel">
-          <div className="section-heading">
-            <div>
-              <span className="eyebrow">Orders</span>
-              <h2>Monitor fulfillment and update statuses.</h2>
-            </div>
+        <section className={`${sectionClass} grid gap-5`}>
+          <div>
+            <span className={eyebrowClass}>Orders</span>
+            <h2 className="mt-3 text-3xl font-semibold text-ink-900">
+              Monitor fulfillment and update statuses.
+            </h2>
           </div>
 
-          <div className="stack-list">
+          <div className="grid gap-3">
             {ordersQuery.isError ? (
               <ErrorState message="Orders could not be loaded. This usually means the current login is not a real backend admin token." />
             ) : sortedOrders.length === 0 ? (
@@ -331,32 +342,43 @@ export function AdminDashboardPage() {
                 message="When orders are available, you will manage their statuses here."
               />
             ) : (
-              sortedOrders.map((order) => (
-                <article key={order._id || order.id} className="list-card">
-                  <div>
-                    <div className="button-row">
-                      <strong>{order._id || order.id}</strong>
-                      <StatusBadge status={order.status || "PENDING"} />
+              sortedOrders.map((order: any) => (
+                <article
+                  key={order._id || order.id}
+                  className="flex flex-col gap-4 rounded-[26px] border border-white/70 bg-white/75 p-4"
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <strong className="text-lg font-semibold text-ink-900">
+                          {order._id || order.id}
+                        </strong>
+                        <StatusBadge status={order.status || "PENDING"} />
+                      </div>
+                      <p className="mt-2 text-sm text-ink-500">
+                        {order.user?.email || order.shippingAddress?.email || "Customer order"}
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-ink-900">
+                        {formatCurrency(order.totalPrice || order.total || 0)}
+                      </p>
                     </div>
-                    <p>{order.user?.email || order.shippingAddress?.email || "Customer order"}</p>
-                    <p>{formatCurrency(order.totalPrice || order.total || 0)}</p>
+                    <select
+                      className="w-full rounded-3xl border border-ink-900/10 bg-white px-4 py-3 text-sm text-ink-900 outline-none sm:w-52"
+                      defaultValue={order.status || "PENDING"}
+                      onChange={(event) =>
+                        orderStatusMutation.mutate({
+                          orderId: order._id || order.id,
+                          status: event.target.value,
+                        })
+                      }
+                    >
+                      {ORDER_STATUSES.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                  <select
-                    className="status-select"
-                    defaultValue={order.status || "PENDING"}
-                    onChange={(event) =>
-                      orderStatusMutation.mutate({
-                        orderId: order._id || order.id,
-                        status: event.target.value,
-                      })
-                    }
-                  >
-                    {ORDER_STATUSES.map((status) => (
-                      <option key={status} value={status}>
-                        {status}
-                      </option>
-                    ))}
-                  </select>
                 </article>
               ))
             )}

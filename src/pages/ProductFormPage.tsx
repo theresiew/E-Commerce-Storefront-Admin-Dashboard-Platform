@@ -4,15 +4,18 @@ import { useEffect } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import {
-  createProduct,
-  updateProduct,
-} from "../api/products";
+import { createProduct, updateProduct } from "../api/products";
 import { ErrorState } from "../components/ErrorState";
 import { FormField } from "../components/FormField";
 import { LoadingState } from "../components/LoadingState";
 import { useAuth } from "../context/AuthContext";
 import { useCategories, useProduct } from "../hooks/useCatalog";
+import {
+  eyebrowClass,
+  primaryButtonClass,
+  secondaryButtonClass,
+  sectionClass,
+} from "../lib/ui";
 import { upsertDemoProduct } from "../lib/demoAdmin";
 import { getErrorMessage } from "../utils/formatters";
 import { productSchema } from "../validation/schemas";
@@ -24,7 +27,7 @@ export function ProductFormPage() {
   const { productId } = useParams();
   const isEditing = Boolean(productId);
 
-  const form = useForm({
+  const form = useForm<any>({
     resolver: zodResolver(productSchema),
     mode: "onChange",
     defaultValues: {
@@ -38,7 +41,7 @@ export function ProductFormPage() {
     },
   });
 
-  const imagesFieldArray = useFieldArray({
+  const imagesFieldArray = useFieldArray<any>({
     control: form.control,
     name: "images",
   });
@@ -68,17 +71,15 @@ export function ProductFormPage() {
       stockQuantity: Number(product.stockQuantity ?? product.countInStock ?? 0),
       images:
         product.images && product.images.length > 0
-          ? product.images.map((image) =>
-              typeof image === "string"
-                ? image
-                : image?.url?.url || image?.url || ""
+          ? product.images.map((image: any) =>
+              typeof image === "string" ? image : image?.url?.url || image?.url || "",
             )
           : [product.image || ""],
     });
   }, [form, productQuery.data]);
 
   const productMutation = useMutation({
-    mutationFn: async (values) => {
+    mutationFn: async (values: any) => {
       const payload = {
         name: values.title,
         description: values.description,
@@ -86,7 +87,7 @@ export function ProductFormPage() {
         categoryId: values.categoryId,
         price: values.price,
         stock: values.stockQuantity,
-        images: values.images.map((url) => ({ url })),
+        images: values.images.map((url: string) => ({ url })),
       };
 
       if (isMockAdmin) {
@@ -122,46 +123,44 @@ export function ProductFormPage() {
   }
 
   return (
-    <div className="panel">
-      <div className="section-heading">
+    <div className={`${sectionClass} grid gap-6`}>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <span className="eyebrow">Product form</span>
-          <h1>{isEditing ? "Edit inventory item" : "Create a new inventory item"}</h1>
+          <span className={eyebrowClass}>Product form</span>
+          <h1 className="mt-3 text-4xl font-semibold text-ink-900">
+            {isEditing ? "Edit inventory item" : "Create a new inventory item"}
+          </h1>
         </div>
-        <Link to="/admin" className="ghost-button">
+        <Link to="/admin" className={secondaryButtonClass}>
           Back to dashboard
         </Link>
       </div>
 
-      <form className="form-grid" onSubmit={onSubmit}>
-        <div className="two-column-grid">
-          <FormField label="Title" htmlFor="product-title" error={form.formState.errors.title?.message}>
+      <form className="grid gap-5" onSubmit={onSubmit}>
+        <div className="grid gap-4 md:grid-cols-2">
+          <FormField label="Title" htmlFor="product-title" error={form.formState.errors.title?.message as string | undefined}>
             <input id="product-title" type="text" {...form.register("title")} />
           </FormField>
-          <FormField label="Brand" htmlFor="product-brand" error={form.formState.errors.brand?.message}>
+          <FormField label="Brand" htmlFor="product-brand" error={form.formState.errors.brand?.message as string | undefined}>
             <input id="product-brand" type="text" {...form.register("brand")} />
           </FormField>
-          <FormField
-            label="Category"
-            htmlFor="product-category"
-            error={form.formState.errors.categoryId?.message}
-          >
+          <FormField label="Category" htmlFor="product-category" error={form.formState.errors.categoryId?.message as string | undefined}>
             <select id="product-category" {...form.register("categoryId")}>
               <option value="">Select category</option>
-              {categoriesQuery.data.map((category) => (
+              {categoriesQuery.data.map((category: any) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
                 </option>
               ))}
             </select>
           </FormField>
-          <FormField label="Price" htmlFor="product-price" error={form.formState.errors.price?.message}>
+          <FormField label="Price" htmlFor="product-price" error={form.formState.errors.price?.message as string | undefined}>
             <input id="product-price" type="number" step="0.01" {...form.register("price")} />
           </FormField>
           <FormField
             label="Stock Quantity"
             htmlFor="product-stock"
-            error={form.formState.errors.stockQuantity?.message}
+            error={form.formState.errors.stockQuantity?.message as string | undefined}
           >
             <input id="product-stock" type="number" step="1" {...form.register("stockQuantity")} />
           </FormField>
@@ -170,20 +169,22 @@ export function ProductFormPage() {
         <FormField
           label="Description"
           htmlFor="product-description"
-          error={form.formState.errors.description?.message}
+          error={form.formState.errors.description?.message as string | undefined}
         >
-          <textarea id="product-description" rows="6" {...form.register("description")} />
+          <textarea id="product-description" rows={6} {...form.register("description")} />
         </FormField>
 
-        <div className="stack-list">
-          <div className="section-heading compact-heading">
+        <div className="grid gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <span className="eyebrow">Product images</span>
-              <h2>Provide at least one valid image URL.</h2>
+              <span className={eyebrowClass}>Product images</span>
+              <h2 className="mt-3 text-2xl font-semibold text-ink-900">
+                Provide at least one valid image URL.
+              </h2>
             </div>
             <button
               type="button"
-              className="ghost-button"
+              className={secondaryButtonClass}
               onClick={() => imagesFieldArray.append("")}
             >
               Add image field
@@ -191,22 +192,20 @@ export function ProductFormPage() {
           </div>
 
           {imagesFieldArray.fields.map((field, index) => (
-            <div key={field.id} className="image-field-row">
-              <FormField
-                label={`Image URL ${index + 1}`}
-                htmlFor={`product-image-${index}`}
-                error={form.formState.errors.images?.[index]?.message}
-              >
-                <input
-                  id={`product-image-${index}`}
-                  type="url"
-                  {...form.register(`images.${index}`)}
-                />
-              </FormField>
+            <div key={field.id} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <div className="flex-1">
+                <FormField
+                  label={`Image URL ${index + 1}`}
+                  htmlFor={`product-image-${index}`}
+                  error={form.formState.errors.images?.[index]?.message as string | undefined}
+                >
+                  <input id={`product-image-${index}`} type="url" {...form.register(`images.${index}`)} />
+                </FormField>
+              </div>
               {imagesFieldArray.fields.length > 1 ? (
                 <button
                   type="button"
-                  className="ghost-button"
+                  className={secondaryButtonClass}
                   onClick={() => imagesFieldArray.remove(index)}
                 >
                   Remove
@@ -215,12 +214,14 @@ export function ProductFormPage() {
             </div>
           ))}
           {typeof form.formState.errors.images?.message === "string" ? (
-            <span className="field-error">{form.formState.errors.images.message}</span>
+            <span className="text-sm font-medium text-rose-600">
+              {form.formState.errors.images.message}
+            </span>
           ) : null}
         </div>
 
-        <div className="button-row">
-          <button type="submit" className="primary-button" disabled={productMutation.isPending}>
+        <div className="flex flex-wrap gap-3">
+          <button type="submit" className={primaryButtonClass} disabled={productMutation.isPending}>
             {productMutation.isPending
               ? "Saving..."
               : isEditing

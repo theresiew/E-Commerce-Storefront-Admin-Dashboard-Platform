@@ -1,6 +1,6 @@
 # NovaCart Commerce Platform
 
-NovaCart is a production-style React frontend for an e-commerce storefront and admin dashboard. It combines a customer shopping experience with a protected admin workspace for products, categories, and orders.
+NovaCart is a production-style TypeScript + React frontend for an e-commerce storefront and admin dashboard. It combines a customer shopping experience with a protected admin workspace for products, categories, and orders while connecting to the provided Railway backend API.
 
 This frontend is configured to use the Railway API at `https://e-commas-apis-production.up.railway.app/api`.
 
@@ -14,7 +14,8 @@ This frontend is configured to use the Railway API at `https://e-commas-apis-pro
 - Multi-step checkout with React Hook Form and Zod validation
 - Admin dashboard for product CRUD, category management, and order status updates
 - TanStack Query caching and invalidation for products, categories, and orders
-- Responsive UI built for mobile, tablet, and desktop
+- Responsive Tailwind UI built for mobile, tablet, and desktop
+- TypeScript-driven page and component layer for safer frontend development
 
 ## Role Access Summary
 
@@ -30,6 +31,8 @@ This frontend is configured to use the Railway API at `https://e-commas-apis-pro
 ## Tech Stack
 
 - React + Vite
+- TypeScript
+- Tailwind CSS
 - React Router
 - Axios `1.14.0`
 - TanStack Query
@@ -63,7 +66,13 @@ VITE_API_BASE_URL=https://e-commas-apis-production.up.railway.app/api
 npm run dev
 ```
 
-5. Build for production:
+5. Run type-checking:
+
+```bash
+npm run typecheck
+```
+
+6. Build for production:
 
 ```bash
 npm run build
@@ -72,7 +81,7 @@ npm run build
 ## Routing for Deployment
 
 - `public/_redirects` is included for Netlify SPA routing
-- `vercel.json` is included for Vercel rewrites
+- `vercel.json` is included for Vercel SPA rewrites
 
 ## Suggested Deployment Flow
 
@@ -85,3 +94,4 @@ npm run build
 
 - The app is aligned to the Railway Swagger route families: `/public`, `/auth`, `/admin`, and `/categories`.
 - The provided assignment admin mock login can still open the admin UI, but real admin API actions require a backend-issued admin JWT from the Railway API.
+- The frontend uses assignment-aligned statuses: `PENDING`, `PROCESSING`, `SHIPPED`, `DELIVERED`, and `CANCELLED`.

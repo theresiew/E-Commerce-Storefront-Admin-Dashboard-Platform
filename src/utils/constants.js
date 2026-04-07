@@ -3,7 +3,7 @@ export const ADMIN_PASSWORD = "admin123";
 
 export const ORDER_STATUSES = [
   "PENDING",
-  "PAID",
+  "PROCESSING",
   "SHIPPED",
   "DELIVERED",
   "CANCELLED",

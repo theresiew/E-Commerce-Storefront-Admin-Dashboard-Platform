@@ -54,7 +54,11 @@ export async function createCategory(payload) {
 }
 
 export async function updateCategory(categoryId, payload) {
-  return requestWithFallback("put", [`/categories/${categoryId}`], payload);
+  return requestWithFallback(
+    "patch",
+    [`/categories/${categoryId}`],
+    payload
+  );
 }
 
 export async function deleteCategory(categoryId) {

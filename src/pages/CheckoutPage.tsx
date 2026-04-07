@@ -9,8 +9,14 @@ import { createOrder } from "../api/orders";
 import { FormField } from "../components/FormField";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
+import {
+  eyebrowClass,
+  primaryButtonClass,
+  secondaryButtonClass,
+  sectionClass,
+} from "../lib/ui";
 import { PAYMENT_METHODS, SHIPPING_METHODS } from "../utils/constants";
-import { formatCurrency, getErrorMessage } from "../utils/formatters";
+import { formatCurrency, getErrorMessage, titleCase } from "../utils/formatters";
 import { checkoutSchema } from "../validation/schemas";
 
 const steps = [
@@ -65,10 +71,10 @@ export function CheckoutPage() {
     () => ({
       ...watchedValues,
       shippingMeta: SHIPPING_METHODS.find(
-        (item) => item.value === watchedValues.shippingMethod
+        (item) => item.value === watchedValues.shippingMethod,
       ),
     }),
-    [watchedValues]
+    [watchedValues],
   );
 
   const validateStep = async () => {
@@ -123,16 +129,16 @@ export function CheckoutPage() {
   });
 
   return (
-    <div className="checkout-layout">
-      <section className="panel">
-        <div className="section-heading">
-          <div>
-            <span className="eyebrow">Checkout</span>
-            <h1>Complete your order in three guided steps.</h1>
-          </div>
+    <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
+      <section className={`${sectionClass} grid gap-6`}>
+        <div>
+          <span className={eyebrowClass}>Checkout</span>
+          <h1 className="mt-3 text-4xl font-semibold text-ink-900">
+            Complete your order in three guided steps.
+          </h1>
         </div>
 
-        <div className="stepper">
+        <div className="flex flex-wrap gap-3">
           {steps.map((step) => {
             const Icon = step.icon;
             const active = currentStep === step.id;
@@ -141,20 +147,24 @@ export function CheckoutPage() {
             return (
               <div
                 key={step.id}
-                className={`stepper-item ${active ? "stepper-active" : ""} ${completed ? "stepper-completed" : ""}`}
+                className={`inline-flex items-center gap-2 rounded-full border px-4 py-3 text-sm font-semibold ${
+                  active
+                    ? "border-mint-600/20 bg-mint-100 text-mint-600"
+                    : completed
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-ink-900/10 bg-white/75 text-ink-500"
+                }`}
               >
-                <span>
-                  <Icon size={16} />
-                </span>
+                <Icon size={16} />
                 <strong>{step.title}</strong>
               </div>
             );
           })}
         </div>
 
-        <form className="form-grid">
+        <form className="grid gap-4">
           {currentStep === 0 ? (
-            <div className="two-column-grid">
+            <div className="grid gap-4 md:grid-cols-2">
               <FormField label="Full Name" htmlFor="checkout-name" error={form.formState.errors.fullName?.message}>
                 <input id="checkout-name" type="text" {...form.register("fullName")} />
               </FormField>
@@ -204,7 +214,7 @@ export function CheckoutPage() {
           ) : null}
 
           {currentStep === 1 ? (
-            <div className="form-grid">
+            <div className="grid gap-4">
               <FormField
                 label="Payment Method"
                 htmlFor="checkout-payment-method"
@@ -213,56 +223,60 @@ export function CheckoutPage() {
                 <select id="checkout-payment-method" {...form.register("paymentMethod")}>
                   {PAYMENT_METHODS.map((method) => (
                     <option key={method} value={method}>
-                      {method.replaceAll("_", " ")}
+                      {titleCase(method)}
                     </option>
                   ))}
                 </select>
               </FormField>
               <FormField label="Order Notes" htmlFor="checkout-notes" error={form.formState.errors.notes?.message}>
-                <textarea id="checkout-notes" rows="5" {...form.register("notes")} />
+                <textarea id="checkout-notes" rows={5} {...form.register("notes")} />
               </FormField>
             </div>
           ) : null}
 
           {currentStep === 2 ? (
-            <div className="review-grid">
-              <div className="panel review-card">
-                <h3>Shipping information</h3>
-                <p>{reviewDetails.fullName}</p>
-                <p>{reviewDetails.email}</p>
-                <p>{reviewDetails.shippingAddress}</p>
-                <p>
-                  {reviewDetails.city}
-                  {reviewDetails.postalCode ? `, ${reviewDetails.postalCode}` : ""}
-                </p>
-                <p>{reviewDetails.phoneNumber}</p>
-                <p>{reviewDetails.shippingMeta?.label}</p>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-[26px] border border-white/70 bg-white/75 p-5">
+                <h3 className="text-xl font-semibold text-ink-900">Shipping information</h3>
+                <div className="mt-3 grid gap-2 text-sm leading-7 text-ink-500">
+                  <p>{reviewDetails.fullName}</p>
+                  <p>{reviewDetails.email}</p>
+                  <p>{reviewDetails.shippingAddress}</p>
+                  <p>
+                    {reviewDetails.city}
+                    {reviewDetails.postalCode ? `, ${reviewDetails.postalCode}` : ""}
+                  </p>
+                  <p>{reviewDetails.phoneNumber}</p>
+                  <p>{reviewDetails.shippingMeta?.label}</p>
+                </div>
               </div>
 
-              <div className="panel review-card">
-                <h3>Payment and notes</h3>
-                <p>{reviewDetails.paymentMethod?.replaceAll("_", " ")}</p>
-                <p>{reviewDetails.notes || "No extra notes provided."}</p>
+              <div className="rounded-[26px] border border-white/70 bg-white/75 p-5">
+                <h3 className="text-xl font-semibold text-ink-900">Payment and notes</h3>
+                <div className="mt-3 grid gap-2 text-sm leading-7 text-ink-500">
+                  <p>{titleCase(reviewDetails.paymentMethod)}</p>
+                  <p>{reviewDetails.notes || "No extra notes provided."}</p>
+                </div>
               </div>
             </div>
           ) : null}
         </form>
 
-        <div className="button-row">
+        <div className="flex flex-wrap gap-3">
           {currentStep > 0 ? (
-            <button type="button" className="ghost-button" onClick={previousStep}>
+            <button type="button" className={secondaryButtonClass} onClick={previousStep}>
               Back
             </button>
           ) : null}
 
           {currentStep < 2 ? (
-            <button type="button" className="primary-button" onClick={nextStep}>
+            <button type="button" className={primaryButtonClass} onClick={nextStep}>
               Continue
             </button>
           ) : (
             <button
               type="button"
-              className="primary-button"
+              className={primaryButtonClass}
               onClick={submitOrder}
               disabled={orderMutation.isPending}
             >
@@ -272,36 +286,40 @@ export function CheckoutPage() {
         </div>
       </section>
 
-      <aside className="panel cart-summary">
-        <span className="eyebrow">Order review</span>
-        <h2>{items.length} products</h2>
-        <div className="summary-list">
-          {items.map((item) => (
-            <div key={item.id}>
+      <aside className={`${sectionClass} grid h-fit gap-4`}>
+        <span className={eyebrowClass}>Order review</span>
+        <h2 className="text-3xl font-semibold text-ink-900">{items.length} products</h2>
+        <div className="grid gap-3 text-sm text-ink-500">
+          {items.map((item: any) => (
+            <div key={item.id} className="flex items-center justify-between gap-4">
               <span>
                 {item.title} x {item.quantity}
               </span>
-              <strong>{formatCurrency(item.price * item.quantity)}</strong>
+              <strong className="text-ink-900">
+                {formatCurrency(item.price * item.quantity)}
+              </strong>
             </div>
           ))}
-          <div>
+          <div className="flex items-center justify-between gap-4">
             <span>Subtotal</span>
-            <strong>{formatCurrency(totals.subtotal)}</strong>
+            <strong className="text-ink-900">{formatCurrency(totals.subtotal)}</strong>
           </div>
-          <div>
+          <div className="flex items-center justify-between gap-4">
             <span>Shipping</span>
-            <strong>{totals.shipping === 0 ? "Free" : formatCurrency(totals.shipping)}</strong>
+            <strong className="text-ink-900">
+              {totals.shipping === 0 ? "Free" : formatCurrency(totals.shipping)}
+            </strong>
           </div>
-          <div>
+          <div className="flex items-center justify-between gap-4">
             <span>Tax</span>
-            <strong>{formatCurrency(totals.tax)}</strong>
+            <strong className="text-ink-900">{formatCurrency(totals.tax)}</strong>
           </div>
-          <div className="summary-total">
+          <div className="flex items-center justify-between gap-4 border-t border-ink-900/10 pt-3">
             <span>Total</span>
-            <strong>{formatCurrency(totals.grandTotal)}</strong>
+            <strong className="text-lg text-ink-900">{formatCurrency(totals.grandTotal)}</strong>
           </div>
         </div>
-        <p className="helper-note">
+        <p className="text-sm leading-7 text-ink-500">
           Orders over {formatCurrency(150)} receive free shipping automatically.
         </p>
       </aside>

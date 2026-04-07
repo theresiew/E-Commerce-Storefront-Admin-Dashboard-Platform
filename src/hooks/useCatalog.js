@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchCategories } from "../api/categories";
 import {
   fetchProductById,
+  fetchProductsByCategory,
   fetchProducts,
 } from "../api/products";
 import { mergeDemoCategories, mergeDemoProducts } from "../lib/demoAdmin";
@@ -11,6 +12,19 @@ export function useProducts() {
   const query = useQuery({
     queryKey: ["products"],
     queryFn: fetchProducts,
+  });
+
+  return {
+    ...query,
+    data: useMemo(() => mergeDemoProducts(query.data || []), [query.data]),
+  };
+}
+
+export function useProductsByCategory(categoryId) {
+  const query = useQuery({
+    queryKey: ["products", "category", categoryId],
+    queryFn: () => fetchProductsByCategory(categoryId),
+    enabled: Boolean(categoryId),
   });
 
   return {
