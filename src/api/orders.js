@@ -4,6 +4,7 @@ import {
   readStorage,
   writeStorage,
 } from "../lib/storage";
+import { syncRemoteCart } from "./cart";
 import { requestWithFallback } from "./client";
 import { normalizeOrder } from "../utils/normalizers";
 
@@ -93,7 +94,18 @@ export async function createOrder(payload) {
     return createLocalOrder(payload);
   }
 
-  return requestWithFallback("post", ["/auth/orders", "/orders"], payload);
+  try {
+    return await requestWithFallback("post", ["/auth/orders", "/orders"], payload);
+  } catch (error) {
+    const message = String(error?.response?.data?.message || error?.message || "").toLowerCase();
+
+    if (message.includes("cart is empty") && Array.isArray(payload?.items) && payload.items.length > 0) {
+      await syncRemoteCart(payload.items);
+      return requestWithFallback("post", ["/auth/orders", "/orders"], payload);
+    }
+
+    throw error;
+  }
 }
 
 export async function fetchMyOrders() {

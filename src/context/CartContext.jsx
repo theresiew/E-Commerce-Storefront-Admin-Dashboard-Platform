@@ -66,7 +66,7 @@ export function CartProvider({ children }) {
 
   const persistRemote = async (nextItems) => {
     if (isAuthenticated && userRole === "USER") {
-      await syncRemoteCart(nextItems.filter((item) => item.variantId));
+      await syncRemoteCart(nextItems);
     }
   };
 
