@@ -1,5 +1,7 @@
 import { getPrimaryStorefrontCategory } from "./catalog";
 
+type ProductLike = Record<string, any>;
+
 const CATEGORY_VISUALS = {
   Phones: {
     start: "#dff7f2",
@@ -78,11 +80,11 @@ const IMAGE_MISMATCH_RULES = [
   },
 ];
 
-function getCategoryVisual(categoryLabel) {
+function getCategoryVisual(categoryLabel: string) {
   return CATEGORY_VISUALS[categoryLabel] || CATEGORY_VISUALS.Default;
 }
 
-function getShapeMarkup(shape, accent) {
+function getShapeMarkup(shape: string, accent: string) {
   switch (shape) {
     case "phone":
       return `<rect x="304" y="130" width="192" height="340" rx="34" fill="rgba(255,255,255,0.86)" stroke="${accent}" stroke-width="16" />
@@ -121,7 +123,11 @@ function getShapeMarkup(shape, accent) {
   }
 }
 
-function shouldUseCategoryPlaceholder(product, imageUrl, categoryLabel) {
+function shouldUseCategoryPlaceholder(
+  product: ProductLike,
+  imageUrl: string,
+  categoryLabel: string,
+) {
   if (!imageUrl) {
     return true;
   }
@@ -146,7 +152,7 @@ function shouldUseCategoryPlaceholder(product, imageUrl, categoryLabel) {
   );
 }
 
-export function getProductImageUrl(product) {
+export function getProductImageUrl(product: ProductLike) {
   const imageUrl =
     product?.images?.[0]?.url ||
     product?.images?.[0] ||

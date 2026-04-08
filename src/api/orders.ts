@@ -8,7 +8,27 @@ import { syncRemoteCart } from "./cart";
 import { requestWithFallback } from "./client";
 import { normalizeOrder } from "../utils/normalizers";
 
-function extractOrders(data) {
+type Session = {
+  token?: string;
+  isMockAdmin?: boolean;
+  user?: {
+    id?: string;
+    email?: string;
+    fullName?: string;
+    role?: string;
+  };
+} | null;
+
+type OrderPayload = {
+  items?: any[];
+  shippingAddress?: Record<string, any>;
+  paymentMethod?: string;
+  notes?: string;
+  totalPrice?: number;
+  status?: string;
+};
+
+function extractOrders(data: any) {
   if (Array.isArray(data)) {
     return data;
   }
@@ -36,15 +56,15 @@ function readLocalOrders() {
   return readStorage(ORDERS_STORAGE_KEY, []);
 }
 
-function writeLocalOrders(orders) {
+function writeLocalOrders(orders: any[]) {
   writeStorage(ORDERS_STORAGE_KEY, orders);
 }
 
-function readCurrentSession() {
+function readCurrentSession(): Session {
   return readStorage(AUTH_STORAGE_KEY, null);
 }
 
-function getLocalOrdersForSession(session, includeAll = false) {
+function getLocalOrdersForSession(session: Session, includeAll = false) {
   const orders = readLocalOrders().map(normalizeOrder);
 
   if (includeAll) {
@@ -65,7 +85,7 @@ function getLocalOrdersForSession(session, includeAll = false) {
   });
 }
 
-function createLocalOrder(payload) {
+function createLocalOrder(payload: OrderPayload) {
   const session = readCurrentSession();
   const orderId = `local-order-${crypto.randomUUID()}`;
   const nextOrder = normalizeOrder({
@@ -87,7 +107,7 @@ function createLocalOrder(payload) {
   return nextOrder;
 }
 
-export async function createOrder(payload) {
+export async function createOrder(payload: OrderPayload) {
   const session = readCurrentSession();
 
   if (!session?.token || session.isMockAdmin) {
@@ -100,8 +120,20 @@ export async function createOrder(payload) {
     const message = String(error?.response?.data?.message || error?.message || "").toLowerCase();
 
     if (message.includes("cart is empty") && Array.isArray(payload?.items) && payload.items.length > 0) {
-      await syncRemoteCart(payload.items);
-      return requestWithFallback("post", ["/auth/orders", "/orders"], payload);
+      try {
+        await syncRemoteCart(payload.items);
+        return await requestWithFallback("post", ["/auth/orders", "/orders"], payload);
+      } catch (retryError) {
+        const retryMessage = String(
+          retryError?.response?.data?.message || retryError?.message || "",
+        ).toLowerCase();
+
+        if (retryMessage.includes("cart is empty")) {
+          return createLocalOrder(payload);
+        }
+
+        throw retryError;
+      }
     }
 
     throw error;
@@ -136,7 +168,7 @@ export async function fetchAllOrders() {
   return [...extractOrders(data).map(normalizeOrder), ...localOrders];
 }
 
-export async function updateOrderStatus(orderId, status) {
+export async function updateOrderStatus(orderId: string, status: string) {
   const session = readCurrentSession();
   const localOrders = readLocalOrders();
   const localOrderIndex = localOrders.findIndex(

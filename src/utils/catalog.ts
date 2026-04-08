@@ -121,11 +121,13 @@ const STOREFRONT_CATEGORY_CONFIG = [
   },
 ];
 
+type ProductLike = Record<string, any>;
+
 function normalizeTerm(value = "") {
   return slugify(String(value)).replace(/-/g, " ");
 }
 
-export function getCatalogSearchText(product) {
+export function getCatalogSearchText(product: ProductLike) {
   return normalizeTerm(
     [
       product?.title,
@@ -140,7 +142,7 @@ export function getCatalogSearchText(product) {
   );
 }
 
-function getCategoryScore(product, categoryConfig) {
+function getCategoryScore(product: ProductLike, categoryConfig: { terms: string[] }) {
   const haystack = getCatalogSearchText(product);
 
   return categoryConfig.terms.reduce((score, term) => {
@@ -154,7 +156,7 @@ function getCategoryScore(product, categoryConfig) {
   }, 0);
 }
 
-export function getPrimaryStorefrontCategory(product) {
+export function getPrimaryStorefrontCategory(product: ProductLike) {
   const ranked = STOREFRONT_CATEGORY_CONFIG.map((category) => ({
     name: category.name,
     score: getCategoryScore(product, category),
@@ -167,13 +169,17 @@ export function getPrimaryStorefrontCategory(product) {
   return ranked[0].name;
 }
 
-export function getVisibleStorefrontCategories(products = []) {
+export function getVisibleStorefrontCategories(products: ProductLike[] = []) {
   return STOREFRONT_CATEGORY_CONFIG.filter((category) =>
     products.some((product) => getPrimaryStorefrontCategory(product) === category.name),
   );
 }
 
-export function filterCatalogProducts(products = [], activeCategory = "ALL", searchTerm = "") {
+export function filterCatalogProducts(
+  products: ProductLike[] = [],
+  activeCategory = "ALL",
+  searchTerm = "",
+) {
   const normalizedSearch = normalizeTerm(searchTerm);
 
   return products.filter((product) => {

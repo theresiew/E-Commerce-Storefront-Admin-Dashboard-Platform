@@ -1,12 +1,40 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import toast from "react-hot-toast";
 import { clearRemoteCart, fetchRemoteCart, syncRemoteCart } from "../api/cart";
 import { CART_STORAGE_KEY, readStorage, writeStorage } from "../lib/storage";
 import { useAuth } from "./AuthContext";
 
-const CartContext = createContext(null);
+type CartItem = {
+  id: string;
+  itemId: string | null;
+  title: string;
+  price: number;
+  image: string;
+  quantity: number;
+  stockQuantity: number;
+  category: string;
+  brand: string;
+  variantId: string | null;
+};
 
-function normalizeCartItem(product, quantity = 1) {
+type CartContextValue = {
+  items: CartItem[];
+  totals: {
+    quantity: number;
+    subtotal: number;
+    shipping: number;
+    tax: number;
+    grandTotal: number;
+  };
+  addItem: (product: Record<string, any>, quantity?: number) => Promise<void>;
+  updateItemQuantity: (itemId: string, quantity: number) => Promise<void>;
+  removeItem: (itemId: string) => Promise<void>;
+  clearCart: () => Promise<void>;
+};
+
+const CartContext = createContext<CartContextValue | null>(null);
+
+function normalizeCartItem(product: Record<string, any>, quantity = 1): CartItem {
   return {
     id: product._id || product.id,
     itemId: product.itemId || null,
@@ -21,9 +49,9 @@ function normalizeCartItem(product, quantity = 1) {
   };
 }
 
-export function CartProvider({ children }) {
+export function CartProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated, userRole } = useAuth();
-  const [items, setItems] = useState(() => readStorage(CART_STORAGE_KEY, []));
+  const [items, setItems] = useState<CartItem[]>(() => readStorage(CART_STORAGE_KEY, []));
 
   useEffect(() => {
     writeStorage(CART_STORAGE_KEY, items);
@@ -64,13 +92,13 @@ export function CartProvider({ children }) {
     };
   }, [isAuthenticated, userRole]);
 
-  const persistRemote = async (nextItems) => {
+  const persistRemote = async (nextItems: CartItem[]) => {
     if (isAuthenticated && userRole === "USER") {
       await syncRemoteCart(nextItems);
     }
   };
 
-  const addItem = async (product, quantity = 1) => {
+  const addItem = async (product: Record<string, any>, quantity = 1) => {
     const normalizedItem = normalizeCartItem(product, quantity);
 
     setItems((currentItems) => {
@@ -96,7 +124,7 @@ export function CartProvider({ children }) {
     toast.success("Product added to cart.");
   };
 
-  const updateItemQuantity = async (itemId, quantity) => {
+  const updateItemQuantity = async (itemId: string, quantity: number) => {
     setItems((currentItems) => {
       const nextItems = currentItems
         .map((item) =>
@@ -114,7 +142,7 @@ export function CartProvider({ children }) {
     });
   };
 
-  const removeItem = async (itemId) => {
+  const removeItem = async (itemId: string) => {
     setItems((currentItems) => {
       const nextItems = currentItems.filter((item) => item.id !== itemId);
       void persistRemote(nextItems);

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import toast from "react-hot-toast";
 import { loginUser, registerUser } from "../api/auth";
 import {
@@ -10,7 +10,31 @@ import {
 import { ADMIN_EMAIL, ADMIN_PASSWORD } from "../utils/constants";
 import { getErrorMessage } from "../utils/formatters";
 
-const AuthContext = createContext(null);
+type Session = {
+  token?: string;
+  isMockAdmin?: boolean;
+  user?: {
+    id?: string;
+    fullName?: string;
+    email?: string;
+    role?: string;
+  } | null;
+} | null;
+
+type AuthContextValue = {
+  session: Session;
+  user: Session["user"];
+  token: string;
+  isMockAdmin: boolean;
+  authLoading: boolean;
+  isAuthenticated: boolean;
+  userRole: string;
+  login: (credentials: { email: string; password: string }) => Promise<any>;
+  register: (payload: Record<string, any>) => Promise<any>;
+  logout: () => void;
+};
+
+const AuthContext = createContext<AuthContextValue | null>(null);
 
 function createAdminSession() {
   return {
@@ -25,8 +49,8 @@ function createAdminSession() {
   };
 }
 
-export function AuthProvider({ children }) {
-  const [session, setSession] = useState(() => readStorage(AUTH_STORAGE_KEY, null));
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [session, setSession] = useState<Session>(() => readStorage(AUTH_STORAGE_KEY, null));
   const [authLoading, setAuthLoading] = useState(false);
 
   useEffect(() => {
@@ -35,7 +59,7 @@ export function AuthProvider({ children }) {
     }
   }, [session]);
 
-  const login = async (credentials) => {
+  const login = async (credentials: { email: string; password: string }) => {
     setAuthLoading(true);
 
     try {
@@ -67,7 +91,7 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const register = async (payload) => {
+  const register = async (payload: Record<string, any>) => {
     setAuthLoading(true);
 
     try {

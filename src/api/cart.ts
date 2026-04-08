@@ -1,6 +1,8 @@
 import { apiClient, requestWithFallback } from "./client";
 
-function extractCartItems(data) {
+type CartItem = Record<string, any>;
+
+function extractCartItems(data: any): CartItem[] {
   return (
     data?.data?.items ||
     data?.items ||
@@ -19,7 +21,7 @@ export async function fetchRemoteCart() {
   }
 }
 
-export async function syncRemoteCart(items) {
+export async function syncRemoteCart(items: CartItem[]) {
   try {
     await clearRemoteCart();
 
