@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { cn, primaryButtonClass, secondaryButtonClass } from "../lib/ui";
+import { getPrimaryStorefrontCategory } from "../utils/catalog";
 import { formatCurrency } from "../utils/formatters";
 import { getProductImageUrl, getProductPlaceholder } from "../utils/images";
 
@@ -12,6 +13,11 @@ export function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart();
   const [image, setImage] = useState(() => getProductImageUrl(product));
   const stock = Number(product.stockQuantity ?? product.countInStock ?? 0);
+  const storefrontCategory =
+    getPrimaryStorefrontCategory(product) ||
+    product.category?.name ||
+    product.category ||
+    "General";
 
   useEffect(() => {
     setImage(getProductImageUrl(product));
@@ -37,7 +43,7 @@ export function ProductCard({ product }: { product: Product }) {
       </div>
       <div className="grid gap-4 p-5">
         <div className="flex items-center justify-between gap-3 text-xs font-semibold uppercase tracking-[0.12em] text-ink-500">
-          <span>{product.category?.name || product.category || "General"}</span>
+          <span>{storefrontCategory}</span>
           <span>{product.brand || "Nova"}</span>
         </div>
         <div className="grid gap-2">

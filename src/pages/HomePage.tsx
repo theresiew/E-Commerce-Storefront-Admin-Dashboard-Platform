@@ -5,7 +5,7 @@ import { EmptyState } from "../components/EmptyState";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import { ProductCard } from "../components/ProductCard";
-import { useCategories, useProducts, useProductsByCategory } from "../hooks/useCatalog";
+import { useProducts } from "../hooks/useCatalog";
 import {
   cn,
   eyebrowClass,
@@ -14,20 +14,28 @@ import {
   secondaryButtonClass,
   sectionClass,
 } from "../lib/ui";
+import {
+  filterCatalogProducts,
+  getVisibleStorefrontCategories,
+} from "../utils/catalog";
 
 export function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const deferredSearch = useDeferredValue(searchTerm);
 
-  const categoriesQuery = useCategories();
-  const activeCategory = searchParams.get("category") || "ALL";
-  const selectedCategory = (categoriesQuery.data || []).find(
-    (category: any) => category.name === activeCategory,
-  );
   const allProductsQuery = useProducts();
-  const categoryProductsQuery = useProductsByCategory(selectedCategory);
-  const productsQuery = activeCategory === "ALL" ? allProductsQuery : categoryProductsQuery;
+  const storefrontCategories = useMemo(
+    () => getVisibleStorefrontCategories(allProductsQuery.data || []),
+    [allProductsQuery.data],
+  );
+  const categoryLabels = useMemo(
+    () => ["ALL", ...storefrontCategories.map((category) => category.name)],
+    [storefrontCategories],
+  );
+  const activeCategory = categoryLabels.includes(searchParams.get("category") || "")
+    ? searchParams.get("category") || "ALL"
+    : "ALL";
 
   useEffect(() => {
     const catalogSection = document.getElementById("catalog-results");
@@ -37,30 +45,35 @@ export function HomePage() {
     }
   }, [activeCategory]);
 
+  useEffect(() => {
+    const requestedCategory = searchParams.get("category");
+
+    if (requestedCategory && !categoryLabels.includes(requestedCategory)) {
+      setSearchParams((currentParams) => {
+        const nextParams = new URLSearchParams(currentParams);
+        nextParams.delete("category");
+        return nextParams;
+      });
+    }
+  }, [categoryLabels, searchParams, setSearchParams]);
+
   const filteredProducts = useMemo(() => {
-    const search = deferredSearch.trim().toLowerCase();
+    return filterCatalogProducts(
+      allProductsQuery.data || [],
+      activeCategory,
+      deferredSearch,
+    );
+  }, [activeCategory, allProductsQuery.data, deferredSearch]);
 
-    return (productsQuery.data || []).filter((product: any) => {
-      const haystack = [product.title, product.description, product.brand]
-        .join(" ")
-        .toLowerCase();
-
-      return haystack.includes(search);
-    });
-  }, [deferredSearch, productsQuery.data]);
-
-  if (productsQuery.isLoading) {
+  if (allProductsQuery.isLoading) {
     return <LoadingState title="Loading storefront" message="Fetching live products and categories." />;
   }
 
-  if (productsQuery.isError) {
+  if (allProductsQuery.isError) {
     return (
       <ErrorState message="We could not load the product catalog. Check the API base URL and try again." />
     );
   }
-
-  const categories = categoriesQuery.data || [];
-  const categoryLabels = ["ALL", ...categories.map((category: any) => category.name)];
 
   const handleCategoryClick = (label: string) => {
     if (label === "ALL") {
@@ -105,13 +118,13 @@ export function HomePage() {
           <div className="grid gap-3 sm:grid-cols-3">
             <article className="rounded-[24px] border border-white/60 bg-white/60 p-4">
               <strong className="block text-3xl font-semibold text-ink-900">
-                {productsQuery.data.length}
+                {(allProductsQuery.data || []).length}
               </strong>
               <span className="text-sm text-ink-500">Live products</span>
             </article>
             <article className="rounded-[24px] border border-white/60 bg-white/60 p-4">
-              <strong className="block text-3xl font-semibold text-ink-900">{categories.length}</strong>
-              <span className="text-sm text-ink-500">Dynamic categories</span>
+              <strong className="block text-3xl font-semibold text-ink-900">{storefrontCategories.length}</strong>
+              <span className="text-sm text-ink-500">Core storefront categories</span>
             </article>
             <article className="rounded-[24px] border border-white/60 bg-white/60 p-4">
               <strong className="block text-3xl font-semibold text-ink-900">RBAC</strong>
@@ -199,6 +212,11 @@ export function HomePage() {
             ? "Showing all available products"
             : `Showing products in ${activeCategory}`}
         </h2>
+        {deferredSearch.trim() ? (
+          <p className="text-sm leading-7 text-ink-500">
+            Search matches for "{deferredSearch.trim()}" inside {activeCategory === "ALL" ? "the full catalog" : activeCategory}.
+          </p>
+        ) : null}
       </section>
 
       {filteredProducts.length === 0 ? (
