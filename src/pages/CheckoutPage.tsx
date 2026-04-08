@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CreditCard, MapPin, ShoppingCart } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -27,6 +27,7 @@ const steps = [
 
 export function CheckoutPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const { items, totals, clearCart } = useCart();
   const [currentStep, setCurrentStep] = useState(0);
@@ -59,6 +60,8 @@ export function CheckoutPage() {
     mutationFn: createOrder,
     onSuccess: async () => {
       await clearCart();
+      queryClient.invalidateQueries({ queryKey: ["orders", "me"] });
+      queryClient.invalidateQueries({ queryKey: ["orders", "all"] });
       toast.success("Order placed successfully.");
       navigate("/profile");
     },
